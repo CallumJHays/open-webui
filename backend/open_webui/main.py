@@ -95,6 +95,10 @@ from open_webui.config import (
     reset_config,
 )
 from open_webui.constants import TASKS
+from open_webui.data_cleanup_policy import (
+    DATA_CLEANUP_ENABLED,
+    setup_data_cleanup_schedule,
+)
 from open_webui.env import (
     CHANGELOG,
     GLOBAL_LOG_LEVEL,
@@ -180,6 +184,9 @@ https://github.com/open-webui/open-webui
 async def lifespan(app: FastAPI):
     if RESET_CONFIG_ON_START:
         reset_config()
+
+    if DATA_CLEANUP_ENABLED:
+        await setup_data_cleanup_schedule()
 
     asyncio.create_task(periodic_usage_pool_cleanup())
     yield
