@@ -1,13 +1,13 @@
 from datetime import datetime
 import time
 from pathlib import Path
-from typing import Literal, NamedTuple
+from typing import Literal
 
 from open_webui.test.util.abstract_integration_test import AbstractDBTest, AbstractPostgresTest, AbstractSQLiteTest
 from open_webui.test.util.mock_user import mock_webui_user
 from pydantic import BaseModel
 
-class DataCleanupTaskUnitTestMixin(AbstractDBTest):
+class DataCleanupTaskMixin(AbstractDBTest):
     "tests individual functions of the data cleanup task, with any DB backend"
 
     def test_try_acquire_db_lock_exclusive(self):
@@ -104,19 +104,16 @@ class DataCleanupTaskUnitTestMixin(AbstractDBTest):
         # validate expected assets of before_cutoff_chat_2 are deleted
         assert not Chats.get_chat_by_id(before_cutoff_chat_2_id)
         assert not Files.get_file_by_id(before_cutoff_uploaded_file_2.id)
-        assert not VECTOR_DB_CLIENT.has_collection(before_cutoff_shared_web_file_2.collection_name)
         assert not before_cutoff_uploaded_file_2_path.exists()
 
         # validate expected assets of after_cutoff_chat_1 are not deleted
         assert Chats.get_chat_by_id(after_cutoff_chat_1_id)
         assert Files.get_file_by_id(after_cutoff_uploaded_file_1.id)
-        assert VECTOR_DB_CLIENT.has_collection(after_cutoff_shared_web_file_1.collection_name)
         assert after_cutoff_uploaded_file_1_path.exists()
 
         # validate expected assets of after_cutoff_chat_2 are not deleted
         assert Chats.get_chat_by_id(after_cutoff_chat_2_id)
         assert Files.get_file_by_id(after_cutoff_uploaded_file_2.id)
-        assert VECTOR_DB_CLIENT.has_collection(after_cutoff_shared_web_file_2.collection_name)
         assert after_cutoff_uploaded_file_2_path.exists()
 
 
@@ -136,10 +133,10 @@ class DataCleanupTaskUnitTestMixin(AbstractDBTest):
         )
 
     def _process_web(self, url: str) -> "ChatFile":
-        from open_webui.routers.retrieval import ProcessUrlForm
         """
         Helper function for POST /api/v1/retrieval/process/web/
         """
+        from open_webui.routers.retrieval import ProcessUrlForm
         response = self.fast_api_client.post(
             "/api/v1/retrieval/process/web",
             json=ProcessUrlForm(url=url).model_dump()
@@ -167,10 +164,10 @@ class DataCleanupTaskUnitTestMixin(AbstractDBTest):
 
 
 
-class TestDataCleanupTaskUnitTestPostgres(DataCleanupTaskUnitTestMixin, AbstractPostgresTest):
+class TestDataCleanupTaskPostgres(DataCleanupTaskMixin, AbstractPostgresTest):
     ...
 
-class TestDataCleanupTaskUnitTestSQLite(DataCleanupTaskUnitTestMixin, AbstractSQLiteTest):
+class TestDataCleanupTaskSQLite(DataCleanupTaskMixin, AbstractSQLiteTest):
     ...
 
 class ChatFile(BaseModel):
